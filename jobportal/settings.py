@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'notifications',
     'payments',
     'search',
+    'shortlisting'
 ]
 
 MIDDLEWARE = [
