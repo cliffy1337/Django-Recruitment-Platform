@@ -5,6 +5,6 @@ from jobs import views
 
 urlpatterns = [
     path('', views.home),
-    path('admin/', admin.site.urls),
+    path('admin-portal/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
 ]

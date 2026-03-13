@@ -32,6 +32,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'accounts',
     'jobs',
+    'applications',
+    'companies',
+    'notifications',
+    'payments',
+    'search',
 ]
 
 MIDDLEWARE = [
