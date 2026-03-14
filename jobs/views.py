@@ -1,4 +1,10 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
 def home(request):
-    return HttpResponse("Welcome to JobPortal")
+    return render(request, 'jobs/index.html')
+
+def job_list(request):
+    return render(request, 'jobs/job_list.html')
+
+def post_job(request):
+    return render(request, 'jobs/post_job.html')

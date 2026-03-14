@@ -1,0 +1,57 @@
+/* Custom CSS overrides and additions to complement Tailwind */
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better focus outlines */
+:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+/* Custom button hover effects */
+button, .btn {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Card hover effect */
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom animation for mobile menu */
+#mobile-menu {
+    transition: max-height 0.3s ease-out;
+}
+
+/* Gradient text */
+.text-gradient {
+    background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Job card image placeholder */
+.job-card-image {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+}
+
+/* Custom scrollbar (optional, WebKit only) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #a5b4fc;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #818cf8;
+}
