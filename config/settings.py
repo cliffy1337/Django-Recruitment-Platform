@@ -130,6 +130,13 @@ STATICFILES_DIRS = [
 
 LOGIN_REDIRECT_URL = 'profile'
 
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_REQUIRED = True                # email is required
+ACCOUNT_AUTHENTICATION_METHOD = 'email'      # login with email (or username)
+ACCOUNT_USERNAME_REQUIRED = False             # if you don't need usernames
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True           # confirm by clicking link (no extra POST)
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3    # link validity
+
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
@@ -148,3 +155,17 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+# Email Configuration
+
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend"
+)
+
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
