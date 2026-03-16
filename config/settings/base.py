@@ -114,3 +114,9 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
+
+# config/settings/base.py (or production.py)
+
+GOOGLE_CLOUD_PROJECT = config('GOOGLE_CLOUD_PROJECT')
+GOOGLE_TALENT_CREDENTIALS_PATH = config('GOOGLE_TALENT_CREDENTIALS_PATH')
+GOOGLE_TALENT_TENANT_ID = config('GOOGLE_TALENT_TENANT_ID', default=None)
