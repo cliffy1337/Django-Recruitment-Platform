@@ -1,28 +1,28 @@
 from .base import *
 
 DEBUG = False
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
+ALLOWED_HOSTS = get_secret("ALLOWED_HOSTS", default="", cast=Csv())
 
 # Example: PostgreSQL for production
 DATABASES = {
     "default": {
-        "ENGINE": config("DB_ENGINE", default="django.db.backends.postgresql"),
-        "NAME": config("DB_NAME"),
-        "USER": config("DB_USER"),
-        "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST"),
-        "PORT": config("DB_PORT", cast=int),
+        "ENGINE": get_secret("DB_ENGINE", default="django.db.backends.postgresql"),
+        "NAME": get_secret("DB_NAME"),
+        "USER": get_secret("DB_USER"),
+        "PASSWORD": get_secret("DB_PASSWORD"),
+        "HOST": get_secret("DB_HOST"),
+        "PORT": get_secret("DB_PORT", cast=int),
     }
 }
 
 # Static files for production
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Example email config for production
+# Example email get_secret for production
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
-EMAIL_HOST = config("EMAIL_HOST")
-EMAIL_PORT = config("EMAIL_PORT", cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+EMAIL_HOST = get_secret("EMAIL_HOST")
+EMAIL_PORT = get_secret("EMAIL_PORT", cast=int)
+EMAIL_HOST_USER = get_secret("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = get_secret("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = get_secret("DEFAULT_FROM_EMAIL")
