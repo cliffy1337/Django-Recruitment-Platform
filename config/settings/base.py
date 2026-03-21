@@ -141,6 +141,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Ensure we're using S3 for file storage
+DEFAULT_FILE_STORAGE = 'config.storage_backends.MediaStorage'
+
 # Email
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = get_secret("EMAIL_HOST")
