@@ -142,3 +142,6 @@ yarn-error.log*
 
 *.map
 *.sass-cache
+
+#Miscellaneous
+tree.txt
