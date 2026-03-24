@@ -4,16 +4,25 @@ DEBUG = False
 ALLOWED_HOSTS = get_secret("ALLOWED_HOSTS", default="", cast=Csv())
 
 # Example: PostgreSQL for production
+# DATABASES = {
+#     "default": {
+#         "ENGINE": get_secret("DB_ENGINE", default="django.db.backends.postgresql"),
+#         "NAME": get_secret("DB_NAME"),
+#         "USER": get_secret("DB_USER"),
+#         "PASSWORD": get_secret("DB_PASSWORD"),
+#         "HOST": get_secret("DB_HOST"),
+#         "PORT": get_secret("DB_PORT", cast=int),
+#     }
+# }
+
+# SQLite Configuration
 DATABASES = {
     "default": {
-        "ENGINE": get_secret("DB_ENGINE", default="django.db.backends.postgresql"),
-        "NAME": get_secret("DB_NAME"),
-        "USER": get_secret("DB_USER"),
-        "PASSWORD": get_secret("DB_PASSWORD"),
-        "HOST": get_secret("DB_HOST"),
-        "PORT": get_secret("DB_PORT", cast=int),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",  # Creates file in your project root
     }
 }
+
 
 # Static files for production
 STATIC_ROOT = BASE_DIR / "staticfiles"
