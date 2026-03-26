@@ -112,3 +112,87 @@ class User(AbstractUser):
             return format_html('<img src="{}" width="50" />', self.profile_picture.url)
         return ''
     admin_profile_picture.short_description = _('Profile Picture')
+
+    # Add this at the end of your models.py file, after the User class
+
+class Education(models.Model):
+    """
+    Education history for job seekers
+    """
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='education',
+        verbose_name=_('User')
+    )
+    institution = models.CharField(max_length=255, verbose_name=_('Institution'))
+    degree = models.CharField(max_length=255, verbose_name=_('Degree'))
+    field_of_study = models.CharField(max_length=255, blank=True, verbose_name=_('Field of Study'))
+    start_date = models.DateField(verbose_name=_('Start Date'))
+    end_date = models.DateField(blank=True, null=True, verbose_name=_('End Date'))
+    current = models.BooleanField(default=False, verbose_name=_('Currently Studying'))
+    description = models.TextField(blank=True, verbose_name=_('Description'))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'accounts_education'
+        verbose_name = _('Education')
+        verbose_name_plural = _('Education')
+        ordering = ['-end_date', '-start_date']
+    
+    def __str__(self):
+        return f"{self.degree} at {self.institution}"
+
+
+class WorkExperience(models.Model):
+    """
+    Work experience for job seekers
+    """
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='work_experience',
+        verbose_name=_('User')
+    )
+    job_title = models.CharField(max_length=255, verbose_name=_('Job Title'))
+    company = models.CharField(max_length=255, verbose_name=_('Company'))
+    location = models.CharField(max_length=255, blank=True, verbose_name=_('Location'))
+    start_date = models.DateField(verbose_name=_('Start Date'))
+    end_date = models.DateField(blank=True, null=True, verbose_name=_('End Date'))
+    current = models.BooleanField(default=False, verbose_name=_('Currently Working'))
+    description = models.TextField(blank=True, verbose_name=_('Description'))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'accounts_work_experience'
+        verbose_name = _('Work Experience')
+        verbose_name_plural = _('Work Experiences')
+        ordering = ['-end_date', '-start_date']
+    
+    def __str__(self):
+        return f"{self.job_title} at {self.company}"
+
+
+class Skill(models.Model):
+    """
+    Skills for job seekers
+    """
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='skills',
+        verbose_name=_('User')
+    )
+    name = models.CharField(max_length=100, verbose_name=_('Skill Name'))
+    years_of_experience = models.PositiveIntegerField(default=0, verbose_name=_('Years of Experience'))
+    
+    class Meta:
+        db_table = 'accounts_skill'
+        verbose_name = _('Skill')
+        verbose_name_plural = _('Skills')
+        unique_together = ['user', 'name']
+    
+    def __str__(self):
+        return self.name

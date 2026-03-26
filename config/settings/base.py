@@ -88,7 +88,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SITE_ID = 1
-LOGIN_REDIRECT_URL = "profile"
+LOGIN_REDIRECT_URL = "accounts:profile"
 
 # Email/password signup requires verification
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"

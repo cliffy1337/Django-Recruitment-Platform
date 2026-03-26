@@ -1,7 +1,8 @@
 from django import forms
 from allauth.account.forms import SignupForm
 from django.core.exceptions import ValidationError
-from .models import User
+from .models import User, Education, WorkExperience, Skill
+
 
 class CustomSignupForm(SignupForm):
     """
@@ -108,3 +109,66 @@ class ProfilePictureForm(forms.ModelForm):
                 raise ValidationError('Invalid file extension. Allowed: jpg, jpeg, png, gif, webp')
         
         return picture
+
+
+class EducationForm(forms.ModelForm):
+    """Form for adding/editing education"""
+    class Meta:
+        model = Education
+        fields = ['institution', 'degree', 'field_of_study', 'start_date', 'end_date', 'current', 'description']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'institution': forms.TextInput(attrs={'class': 'form-control'}),
+            'degree': forms.TextInput(attrs={'class': 'form-control'}),
+            'field_of_study': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        current = cleaned_data.get('current')
+        
+        if not current and end_date and start_date and end_date < start_date:
+            raise ValidationError('End date cannot be before start date')
+        
+        return cleaned_data
+
+
+class WorkExperienceForm(forms.ModelForm):
+    """Form for adding/editing work experience"""
+    class Meta:
+        model = WorkExperience
+        fields = ['job_title', 'company', 'location', 'start_date', 'end_date', 'current', 'description']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'job_title': forms.TextInput(attrs={'class': 'form-control'}),
+            'company': forms.TextInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        current = cleaned_data.get('current')
+        
+        if not current and end_date and start_date and end_date < start_date:
+            raise ValidationError('End date cannot be before start date')
+        
+        return cleaned_data
+
+
+class SkillForm(forms.ModelForm):
+    """Form for adding/editing skills"""
+    class Meta:
+        model = Skill
+        fields = ['name', 'years_of_experience']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Python, Django, Project Management'}),
+            'years_of_experience': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }

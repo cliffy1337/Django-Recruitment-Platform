@@ -322,6 +322,128 @@
                 </div>
             </div>
             
+            <!-- Education Section (Job Seekers Only) -->
+            {% if user.is_job_seeker %}
+            <div class="edit-form-container mt-6">
+                <div class="form-header">
+                    <div class="flex justify-between items-center">
+                        <h3>
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            Education
+                        </h3>
+                        <button id="add-education-btn" class="btn-primary text-sm py-2 px-4">
+                            <i class="fas fa-plus"></i> Add Education
+                        </button>
+                    </div>
+                </div>
+                <div class="form-body">
+                    <div id="education-list" class="space-y-4">
+                        {% for edu in user.education.all %}
+                        <div class="border-l-4 border-indigo-600 pl-4 py-2" data-id="{{ edu.id }}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold">{{ edu.degree }}{% if edu.field_of_study %} in {{ edu.field_of_study }}{% endif %}</h4>
+                                    <p class="text-gray-600 dark:text-gray-400">{{ edu.institution }}</p>
+                                    <p class="text-sm text-gray-500">
+                                        {{ edu.start_date|date:"M Y" }} - {% if edu.current %}Present{% else %}{{ edu.end_date|date:"M Y" }}{% endif %}
+                                    </p>
+                                    {% if edu.description %}
+                                    <p class="text-sm mt-1">{{ edu.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="edit-education-btn text-blue-600 hover:text-blue-800" data-id="{{ edu.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-education-btn text-red-600 hover:text-red-800" data-id="{{ edu.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-center py-4">No education added yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Work Experience Section (Job Seekers Only) -->
+            <div class="edit-form-container mt-6">
+                <div class="form-header">
+                    <div class="flex justify-between items-center">
+                        <h3>
+                            <i class="fas fa-briefcase mr-2"></i>
+                            Work Experience
+                        </h3>
+                        <button id="add-work-btn" class="btn-primary text-sm py-2 px-4">
+                            <i class="fas fa-plus"></i> Add Experience
+                        </button>
+                    </div>
+                </div>
+                <div class="form-body">
+                    <div id="work-list" class="space-y-4">
+                        {% for work in user.work_experience.all %}
+                        <div class="border-l-4 border-purple-600 pl-4 py-2" data-id="{{ work.id }}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold">{{ work.job_title }}</h4>
+                                    <p class="text-gray-600 dark:text-gray-400">{{ work.company }}{% if work.location %} • {{ work.location }}{% endif %}</p>
+                                    <p class="text-sm text-gray-500">
+                                        {{ work.start_date|date:"M Y" }} - {% if work.current %}Present{% else %}{{ work.end_date|date:"M Y" }}{% endif %}
+                                    </p>
+                                    {% if work.description %}
+                                    <p class="text-sm mt-1">{{ work.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="edit-work-btn text-blue-600 hover:text-blue-800" data-id="{{ work.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-work-btn text-red-600 hover:text-red-800" data-id="{{ work.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-center py-4">No work experience added yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Skills Section (Job Seekers Only) -->
+            <div class="edit-form-container mt-6">
+                <div class="form-header">
+                    <div class="flex justify-between items-center">
+                        <h3>
+                            <i class="fas fa-code mr-2"></i>
+                            Skills
+                        </h3>
+                        <button id="add-skill-btn" class="btn-primary text-sm py-2 px-4">
+                            <i class="fas fa-plus"></i> Add Skill
+                        </button>
+                    </div>
+                </div>
+                <div class="form-body">
+                    <div id="skills-list" class="flex flex-wrap gap-2">
+                        {% for skill in user.skills.all %}
+                        <div class="skill-tag bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm flex items-center gap-2" data-id="{{ skill.id }}">
+                            {{ skill.name }}
+                            {% if skill.years_of_experience %}({{ skill.years_of_experience }} yrs){% endif %}
+                            <button class="delete-skill-btn text-indigo-500 hover:text-red-600">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-center py-4 w-full">No skills added yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
             <!-- Account Security Card -->
             <div class="edit-form-container mt-6">
                 <div class="form-header">
@@ -353,10 +475,128 @@
         <h3 class="text-lg font-semibold mb-4">Upload Resume</h3>
         <form id="resume-upload-form" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="file" name="resume" id="modal-resume" accept=".pdf,.doc,.docx" class="w-full p-2 border rounded">
+            <input type="file" name="resume" id="modal-resume" accept=".pdf,.doc,.docx" class="w-full p-2 border rounded dark:bg-gray-700">
             <div class="flex gap-3 mt-4">
                 <button type="submit" class="btn-primary">Upload</button>
                 <button type="button" id="close-modal" class="btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Education Modal -->
+<div id="education-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h3 id="education-modal-title" class="text-lg font-semibold mb-4">Add Education</h3>
+        <form id="education-form">
+            {% csrf_token %}
+            <input type="hidden" id="education-id" value="">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Institution *</label>
+                    <input type="text" id="edu-institution" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Degree *</label>
+                    <input type="text" id="edu-degree" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Field of Study</label>
+                    <input type="text" id="edu-field" class="w-full p-2 border rounded dark:bg-gray-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Start Date *</label>
+                    <input type="date" id="edu-start-date" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="edu-current" class="rounded">
+                        <span class="text-sm">Currently studying</span>
+                    </label>
+                </div>
+                <div id="edu-end-date-container">
+                    <label class="block text-sm font-medium mb-1">End Date</label>
+                    <input type="date" id="edu-end-date" class="w-full p-2 border rounded dark:bg-gray-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="edu-description" rows="3" class="w-full p-2 border rounded dark:bg-gray-700"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button type="submit" class="btn-primary">Save</button>
+                <button type="button" id="close-education-modal" class="btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Work Experience Modal -->
+<div id="work-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h3 id="work-modal-title" class="text-lg font-semibold mb-4">Add Work Experience</h3>
+        <form id="work-form">
+            {% csrf_token %}
+            <input type="hidden" id="work-id" value="">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Job Title *</label>
+                    <input type="text" id="work-title" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Company *</label>
+                    <input type="text" id="work-company" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Location</label>
+                    <input type="text" id="work-location" class="w-full p-2 border rounded dark:bg-gray-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Start Date *</label>
+                    <input type="date" id="work-start-date" class="w-full p-2 border rounded dark:bg-gray-700" required>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="work-current" class="rounded">
+                        <span class="text-sm">Currently working</span>
+                    </label>
+                </div>
+                <div id="work-end-date-container">
+                    <label class="block text-sm font-medium mb-1">End Date</label>
+                    <input type="date" id="work-end-date" class="w-full p-2 border rounded dark:bg-gray-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="work-description" rows="3" class="w-full p-2 border rounded dark:bg-gray-700"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button type="submit" class="btn-primary">Save</button>
+                <button type="button" id="close-work-modal" class="btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Skill Modal -->
+<div id="skill-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Add Skill</h3>
+        <form id="skill-form">
+            {% csrf_token %}
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Skill Name *</label>
+                    <input type="text" id="skill-name" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="e.g., Python, Project Management" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Years of Experience</label>
+                    <input type="number" id="skill-years" class="w-full p-2 border rounded dark:bg-gray-700" min="0" value="0">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button type="submit" class="btn-primary">Save</button>
+                <button type="button" id="close-skill-modal" class="btn-secondary">Cancel</button>
             </div>
         </form>
     </div>
@@ -369,7 +609,6 @@ const editMode = document.getElementById('edit-mode');
 const editBtn = document.getElementById('edit-profile-btn');
 const cancelBtn = document.getElementById('cancel-edit-btn');
 
-// Handle edit from prompts
 const editFromPrompt = document.getElementById('edit-from-prompt');
 
 if (editBtn) {
@@ -420,7 +659,6 @@ if (closeModal) {
     });
 }
 
-// Handle resume upload via modal
 const resumeUploadForm = document.getElementById('resume-upload-form');
 if (resumeUploadForm) {
     resumeUploadForm.addEventListener('submit', async (e) => {
@@ -459,7 +697,6 @@ if (resumeUploadForm) {
     });
 }
 
-// Handle resume deletion
 if (deleteResumeBtn) {
     deleteResumeBtn.addEventListener('click', async () => {
         if (!confirm('Are you sure you want to delete your resume?')) return;
@@ -481,6 +718,230 @@ if (deleteResumeBtn) {
             }
         } catch (error) {
             console.error('Delete error:', error);
+            alert('An error occurred');
+        }
+    });
+}
+
+// Education Functions
+const educationModal = document.getElementById('education-modal');
+const educationForm = document.getElementById('education-form');
+const closeEducationModal = document.getElementById('close-education-modal');
+
+function showEducationModal(eduId = null) {
+    educationModal.classList.remove('hidden');
+    educationModal.classList.add('flex');
+    
+    if (eduId) {
+        document.getElementById('education-modal-title').textContent = 'Edit Education';
+        // Fetch and populate education data
+        fetch(`/accounts/profile/education/edit/${eduId}/`, {
+            headers: { 'X-CSRFToken': csrfToken.value }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('education-id').value = data.id;
+            document.getElementById('edu-institution').value = data.institution;
+            document.getElementById('edu-degree').value = data.degree;
+            document.getElementById('edu-field').value = data.field_of_study;
+            document.getElementById('edu-start-date').value = data.start_date;
+            document.getElementById('edu-current').checked = data.current;
+            if (data.current) {
+                document.getElementById('edu-end-date-container').style.display = 'none';
+            }
+            document.getElementById('edu-end-date').value = data.end_date || '';
+            document.getElementById('edu-description').value = data.description || '';
+        });
+    } else {
+        document.getElementById('education-modal-title').textContent = 'Add Education';
+        document.getElementById('education-form').reset();
+        document.getElementById('education-id').value = '';
+    }
+}
+
+if (document.getElementById('add-education-btn')) {
+    document.getElementById('add-education-btn').addEventListener('click', () => showEducationModal());
+}
+
+if (closeEducationModal) {
+    closeEducationModal.addEventListener('click', () => {
+        educationModal.classList.add('hidden');
+        educationModal.classList.remove('flex');
+    });
+}
+
+if (educationForm) {
+    educationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const eduId = document.getElementById('education-id').value;
+        const url = eduId ? `/accounts/profile/education/edit/${eduId}/` : '/accounts/profile/education/add/';
+        const method = eduId ? 'POST' : 'POST';
+        
+        const data = {
+            institution: document.getElementById('edu-institution').value,
+            degree: document.getElementById('edu-degree').value,
+            field_of_study: document.getElementById('edu-field').value,
+            start_date: document.getElementById('edu-start-date').value,
+            end_date: document.getElementById('edu-end-date').value,
+            current: document.getElementById('edu-current').checked,
+            description: document.getElementById('edu-description').value
+        };
+        
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken.value
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + JSON.stringify(result.errors));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+        }
+    });
+}
+
+// Work Experience Functions
+const workModal = document.getElementById('work-modal');
+const workForm = document.getElementById('work-form');
+const closeWorkModal = document.getElementById('close-work-modal');
+
+function showWorkModal(workId = null) {
+    workModal.classList.remove('hidden');
+    workModal.classList.add('flex');
+    
+    if (workId) {
+        document.getElementById('work-modal-title').textContent = 'Edit Work Experience';
+        fetch(`/accounts/profile/work/edit/${workId}/`, {
+            headers: { 'X-CSRFToken': csrfToken.value }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('work-id').value = data.id;
+            document.getElementById('work-title').value = data.job_title;
+            document.getElementById('work-company').value = data.company;
+            document.getElementById('work-location').value = data.location || '';
+            document.getElementById('work-start-date').value = data.start_date;
+            document.getElementById('work-current').checked = data.current;
+            if (data.current) {
+                document.getElementById('work-end-date-container').style.display = 'none';
+            }
+            document.getElementById('work-end-date').value = data.end_date || '';
+            document.getElementById('work-description').value = data.description || '';
+        });
+    } else {
+        document.getElementById('work-modal-title').textContent = 'Add Work Experience';
+        document.getElementById('work-form').reset();
+        document.getElementById('work-id').value = '';
+    }
+}
+
+if (document.getElementById('add-work-btn')) {
+    document.getElementById('add-work-btn').addEventListener('click', () => showWorkModal());
+}
+
+if (closeWorkModal) {
+    closeWorkModal.addEventListener('click', () => {
+        workModal.classList.add('hidden');
+        workModal.classList.remove('flex');
+    });
+}
+
+if (workForm) {
+    workForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const workId = document.getElementById('work-id').value;
+        const url = workId ? `/accounts/profile/work/edit/${workId}/` : '/accounts/profile/work/add/';
+        
+        const data = {
+            job_title: document.getElementById('work-title').value,
+            company: document.getElementById('work-company').value,
+            location: document.getElementById('work-location').value,
+            start_date: document.getElementById('work-start-date').value,
+            end_date: document.getElementById('work-end-date').value,
+            current: document.getElementById('work-current').checked,
+            description: document.getElementById('work-description').value
+        };
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken.value
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + JSON.stringify(result.errors));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+        }
+    });
+}
+
+// Skill Functions
+const skillModal = document.getElementById('skill-modal');
+const skillForm = document.getElementById('skill-form');
+const closeSkillModal = document.getElementById('close-skill-modal');
+
+if (document.getElementById('add-skill-btn')) {
+    document.getElementById('add-skill-btn').addEventListener('click', () => {
+        skillModal.classList.remove('hidden');
+        skillModal.classList.add('flex');
+        document.getElementById('skill-form').reset();
+    });
+}
+
+if (closeSkillModal) {
+    closeSkillModal.addEventListener('click', () => {
+        skillModal.classList.add('hidden');
+        skillModal.classList.remove('flex');
+    });
+}
+
+if (skillForm) {
+    skillForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const data = {
+            name: document.getElementById('skill-name').value,
+            years_of_experience: parseInt(document.getElementById('skill-years').value) || 0
+        };
+        
+        try {
+            const response = await fetch('/accounts/profile/skill/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken.value
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + JSON.stringify(result.errors));
+            }
+        } catch (error) {
+            console.error('Error:', error);
             alert('An error occurred');
         }
     });
@@ -550,6 +1011,96 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Handle current checkbox for education
+    const eduCurrentCheckbox = document.getElementById('edu-current');
+    if (eduCurrentCheckbox) {
+        eduCurrentCheckbox.addEventListener('change', function() {
+            const endDateContainer = document.getElementById('edu-end-date-container');
+            if (this.checked) {
+                endDateContainer.style.display = 'none';
+                document.getElementById('edu-end-date').value = '';
+            } else {
+                endDateContainer.style.display = 'block';
+            }
+        });
+    }
+    
+    // Handle current checkbox for work
+    const workCurrentCheckbox = document.getElementById('work-current');
+    if (workCurrentCheckbox) {
+        workCurrentCheckbox.addEventListener('change', function() {
+            const endDateContainer = document.getElementById('work-end-date-container');
+            if (this.checked) {
+                endDateContainer.style.display = 'none';
+                document.getElementById('work-end-date').value = '';
+            } else {
+                endDateContainer.style.display = 'block';
+            }
+        });
+    }
+    
+    // Delete education
+    document.querySelectorAll('.delete-education-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!confirm('Delete this education entry?')) return;
+            const id = btn.dataset.id;
+            try {
+                const response = await fetch(`/accounts/profile/education/delete/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken.value }
+                });
+                if (response.ok) location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Edit education
+    document.querySelectorAll('.edit-education-btn').forEach(btn => {
+        btn.addEventListener('click', () => showEducationModal(btn.dataset.id));
+    });
+    
+    // Delete work
+    document.querySelectorAll('.delete-work-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!confirm('Delete this work experience?')) return;
+            const id = btn.dataset.id;
+            try {
+                const response = await fetch(`/accounts/profile/work/delete/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken.value }
+                });
+                if (response.ok) location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Edit work
+    document.querySelectorAll('.edit-work-btn').forEach(btn => {
+        btn.addEventListener('click', () => showWorkModal(btn.dataset.id));
+    });
+    
+    // Delete skill
+    document.querySelectorAll('.delete-skill-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!confirm('Delete this skill?')) return;
+            const skillDiv = btn.closest('.skill-tag');
+            const id = skillDiv.dataset.id;
+            try {
+                const response = await fetch(`/accounts/profile/skill/delete/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken.value }
+                });
+                if (response.ok) location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
 });
 </script>
 {% endblock %}
