@@ -1,4 +1,4 @@
-from .base import get_secret
+from ..django.base import get_secret
 
 # AWS Configuration (your existing AWS settings)
 AWS_ACCESS_KEY_ID = get_secret('AWS_ACCESS_KEY_ID')
