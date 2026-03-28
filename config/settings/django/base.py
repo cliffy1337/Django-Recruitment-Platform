@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "shortlisting",
     "integrations",
     "analytics",
+    "chat",
+    "feedback",
 ]
 
 MIDDLEWARE = [
