@@ -146,6 +146,7 @@ yarn-error.log*
 #Miscellaneous
 tree.txt
 /push.py
+*.pdf
 
 # ----------------------------------------
 # Proprietary AI / business logic protection
