@@ -1,0 +1,458 @@
+{% extends "base_accounts.html" %}
+{% load static %}
+
+{% block title %}Profile | Zizo Jobs{% endblock %}
+
+{% block accounts_content %}
+<div class="profile-container">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Profile Card (unchanged) -->
+        <div class="lg:col-span-1">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-picture-wrapper">
+                        {% if user.profile_picture %}
+                            <img id="profile-picture-img" src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="profile-picture">
+                        {% else %}
+                            <img id="profile-picture-img" src="{% static 'images/default-avatar.png' %}" alt="Default Avatar" class="profile-picture">
+                        {% endif %}
+                        <label for="picture-upload" class="upload-overlay"><i class="fas fa-camera"></i></label>
+                        <input type="file" id="picture-upload" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp">
+                        {% if user.profile_picture %}
+                            <div class="delete-photo-btn" id="delete-picture"><i class="fas fa-trash"></i></div>
+                        {% else %}
+                            <div class="delete-photo-btn" id="delete-picture" style="display: none;"><i class="fas fa-trash"></i></div>
+                        {% endif %}
+                        <div id="upload-progress" class="upload-progress"><div class="progress-bar-custom"></div></div>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name">{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="profile-email">{{ user.email }}</p>
+                    <span class="profile-badge {% if user.is_recruiter %}badge-recruiter{% else %}badge-jobseeker{% endif %}">
+                        <i class="fas {% if user.is_recruiter %}fa-briefcase{% else %}fa-user-graduate{% endif %}"></i>
+                        {{ user.get_user_type_display }}
+                    </span>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-item"><div class="stat-value">{{ user.created_at|date:"M Y" }}</div><div class="stat-label">Member Since</div></div>
+                    <div class="stat-item"><div class="stat-value">{% if user.is_recruiter %}{{ total_jobs_posted|default:"0" }}{% else %}{{ total_applications|default:"0" }}{% endif %}</div><div class="stat-label">{% if user.is_recruiter %}Jobs Posted{% else %}Applications{% endif %}</div></div>
+                    <div class="stat-item"><div class="stat-value">{% if user.onboarding_completed %}✓{% else %}⏳{% endif %}</div><div class="stat-label">Onboarding</div></div>
+                </div>
+                {% if user.phone %}<div class="px-6 py-4 border-b border-gray-100"><p class="text-sm text-gray-600"><i class="fas fa-phone-alt mr-2"></i> {{ user.phone }}</p></div>{% endif %}
+                {% if user.is_recruiter and user.company_name %}<div class="px-6 py-4 border-b border-gray-100"><p class="text-sm text-gray-600"><i class="fas fa-building mr-2"></i> {{ user.company_name }}</p></div>{% endif %}
+                <div class="p-6">
+                    <div class="resume-card">
+                        <i class="fas fa-file-alt text-indigo-600"></i>
+                        <strong class="ml-2">Resume/CV</strong>
+                        {% if user.resume %}
+                            <a href="{{ user.resume.url }}" target="_blank" class="block mt-2 text-sm text-indigo-600 hover:underline"><i class="fas fa-download"></i> View Resume</a>
+                            <button id="delete-resume-btn" class="mt-2 text-sm text-red-600 hover:text-red-700"><i class="fas fa-trash"></i> Delete Resume</button>
+                        {% else %}
+                            <p class="text-sm text-gray-500 mt-2">No resume uploaded</p>
+                            <button id="upload-resume-btn" class="mt-2 text-sm text-indigo-600 hover:text-indigo-700"><i class="fas fa-upload"></i> Upload Resume</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Tabbed Sections -->
+        <div class="lg:col-span-2">
+            <!-- Tabs Navigation -->
+            <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+                <nav class="flex gap-6">
+                    <button id="tab-looking" class="tab-button py-3 px-1 text-sm font-medium border-b-2 transition-colors" data-tab="looking"><i class="fas fa-search mr-2"></i>What I am looking for</button>
+                    <button id="tab-bring" class="tab-button py-3 px-1 text-sm font-medium border-b-2 transition-colors" data-tab="bring"><i class="fas fa-briefcase mr-2"></i>What I bring to the job</button>
+                    <button id="tab-documents" class="tab-button py-3 px-1 text-sm font-medium border-b-2 transition-colors" data-tab="documents"><i class="fas fa-folder-open mr-2"></i>My Documents</button>
+                </nav>
+            </div>
+
+            <!-- ================= TAB 1: WHAT I AM LOOKING FOR ================= -->
+            <div id="looking-pane" class="tab-pane">
+                <div class="edit-form-container">
+                    <div class="form-header"><h3><i class="fas fa-bullseye mr-2"></i>Job Preferences</h3></div>
+                    <div class="form-body">
+                        <form id="job-preferences-form">
+                            {% csrf_token %}
+                            <!-- Job titles / roles (multi-value) -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Job title / role</label>
+                                <div class="flex flex-wrap gap-2 mb-2" id="job-titles-container"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="job-title-input" class="form-control flex-1" placeholder="e.g., .NET Developer, C# Developer">
+                                    <button type="button" id="add-job-title" class="btn-secondary">Add</button>
+                                </div>
+                                <small class="text-gray-500">Enter all job titles or roles that interest you.</small>
+                            </div>
+                            <!-- Job locations (multi-value) -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Job location</label>
+                                <div class="flex flex-wrap gap-2 mb-2" id="job-locations-container"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="job-location-input" class="form-control flex-1" placeholder="e.g., Cape Town, Johannesburg">
+                                    <button type="button" id="add-job-location" class="btn-secondary">Add</button>
+                                </div>
+                                <small class="text-gray-500">Select all locations that interest you.</small>
+                            </div>
+                            <!-- Willing to relocate -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Are you willing to relocate?</label>
+                                <div class="flex gap-4">
+                                    <label class="inline-flex items-center"><input type="radio" name="relocate" value="yes" class="mr-1"> Yes</label>
+                                    <label class="inline-flex items-center"><input type="radio" name="relocate" value="no" class="mr-1"> No</label>
+                                </div>
+                            </div>
+                            <!-- Desired salary -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Desired Salary (per year)</label>
+                                <input type="number" id="desired-salary" class="form-control" placeholder="e.g., 600000">
+                                <small class="text-gray-500">Only visible to you and recruiters.</small>
+                            </div>
+                            <!-- Working time model (multi) -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Working time model</label>
+                                <div class="flex flex-wrap gap-4">
+                                    <label class="inline-flex items-center"><input type="checkbox" value="full_time" class="work-time-checkbox"> Full time</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="part_time" class="work-time-checkbox"> Part time</label>
+                                </div>
+                            </div>
+                            <!-- Contract type (multi) -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Contract type</label>
+                                <div class="flex flex-wrap gap-4">
+                                    <label class="inline-flex items-center"><input type="checkbox" value="permanent" class="contract-checkbox"> Permanent</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="fixed_term" class="contract-checkbox"> Fixed Term</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="temporary" class="contract-checkbox"> Temporary</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="franchise" class="contract-checkbox"> Franchise</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="freelance" class="contract-checkbox"> Freelance</label>
+                                </div>
+                            </div>
+                            <!-- Work from home options -->
+                            <div class="form-group mb-4">
+                                <label class="form-label">Work from home options</label>
+                                <div class="flex flex-wrap gap-4">
+                                    <label class="inline-flex items-center"><input type="checkbox" value="no_remote" class="remote-checkbox"> No remote work</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="partially_remote" class="remote-checkbox"> Partially remote</label>
+                                    <label class="inline-flex items-center"><input type="checkbox" value="fully_remote" class="remote-checkbox"> Fully remote</label>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Preferences</button></div>
+                            <div id="preferences-feedback" class="mt-3 text-sm"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: WHAT I BRING TO THE JOB ================= -->
+            <div id="bring-pane" class="tab-pane">
+                <!-- Work Experience Section -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><div class="flex justify-between items-center"><h3><i class="fas fa-briefcase mr-2"></i>Work Experience</h3><button id="add-work-btn" class="btn-primary text-sm py-2 px-4"><i class="fas fa-plus"></i> Add Experience</button></div></div>
+                    <div class="form-body"><div id="work-list" class="space-y-4">{% for work in user.work_experience.all %}<div class="border-l-4 border-purple-600 pl-4 py-2" data-id="{{ work.id }}"><div class="flex justify-between items-start"><div><h4 class="font-semibold">{{ work.job_title }}</h4><p class="text-gray-600">{{ work.company }}{% if work.location %} • {{ work.location }}{% endif %}</p><p class="text-sm text-gray-500">{{ work.start_date|date:"M Y" }} - {% if work.current %}Present{% else %}{{ work.end_date|date:"M Y" }}{% endif %}</p>{% if work.description %}<p class="text-sm mt-1">{{ work.description }}</p>{% endif %}</div><div class="flex gap-2"><button class="edit-work-btn text-blue-600" data-id="{{ work.id }}"><i class="fas fa-edit"></i></button><button class="delete-work-btn text-red-600" data-id="{{ work.id }}"><i class="fas fa-trash"></i></button></div></div></div>{% empty %}<p class="text-gray-500 text-center py-4">No work experience added yet.</p>{% endfor %}</div></div>
+                </div>
+
+                <!-- Education Section -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><div class="flex justify-between items-center"><h3><i class="fas fa-graduation-cap mr-2"></i>Education</h3><button id="add-education-btn" class="btn-primary text-sm py-2 px-4"><i class="fas fa-plus"></i> Add Education</button></div></div>
+                    <div class="form-body"><div id="education-list" class="space-y-4">{% for edu in user.education.all %}<div class="border-l-4 border-indigo-600 pl-4 py-2" data-id="{{ edu.id }}"><div class="flex justify-between items-start"><div><h4 class="font-semibold">{{ edu.degree }}{% if edu.field_of_study %} in {{ edu.field_of_study }}{% endif %}</h4><p class="text-gray-600">{{ edu.institution }}</p><p class="text-sm text-gray-500">{{ edu.start_date|date:"M Y" }} - {% if edu.current %}Present{% else %}{{ edu.end_date|date:"M Y" }}{% endif %}</p>{% if edu.description %}<p class="text-sm mt-1">{{ edu.description }}</p>{% endif %}</div><div class="flex gap-2"><button class="edit-education-btn text-blue-600" data-id="{{ edu.id }}"><i class="fas fa-edit"></i></button><button class="delete-education-btn text-red-600" data-id="{{ edu.id }}"><i class="fas fa-trash"></i></button></div></div></div>{% empty %}<p class="text-gray-500 text-center py-4">No education added yet.</p>{% endfor %}</div></div>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><div class="flex justify-between items-center"><h3><i class="fas fa-code mr-2"></i>Skills</h3><button id="add-skill-btn" class="btn-primary text-sm py-2 px-4"><i class="fas fa-plus"></i> Add Skill</button></div></div>
+                    <div class="form-body"><div id="skills-list" class="flex flex-wrap gap-2">{% for skill in user.skills.all %}<div class="skill-tag bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm flex items-center gap-2" data-id="{{ skill.id }}">{{ skill.name }}{% if skill.years_of_experience %} ({{ skill.years_of_experience }} yrs){% endif %}<button class="delete-skill-btn text-indigo-500 hover:text-red-600"><i class="fas fa-times-circle"></i></button></div>{% empty %}<p class="text-gray-500 text-center py-4 w-full">No skills added yet.</p>{% endfor %}</div></div>
+                </div>
+
+                <!-- Additional professional info: Current Salary, Notice Period, Driver's license, Languages -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><h3><i class="fas fa-chart-line mr-2"></i>Compensation & Availability</h3></div>
+                    <div class="form-body">
+                        <form id="additional-info-form">
+                            {% csrf_token %}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group"><label class="form-label">Current Salary (per year)</label><input type="number" id="current-salary" class="form-control" placeholder="e.g., 500000"><small class="text-gray-500">Only visible to recruiters.</small></div>
+                                <div class="form-group"><label class="form-label">Notice Period</label><input type="text" id="notice-period" class="form-control" placeholder="e.g., 4 weeks"></div>
+                                <div class="form-group"><label class="form-label">Driver's licence</label><select id="drivers-license" class="form-control"><option value="">Select</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+                            </div>
+                            <div class="form-group mt-4"><label class="form-label">Languages</label><div id="languages-container" class="flex flex-wrap gap-2 mb-2"></div><div class="flex gap-2"><input type="text" id="language-name" class="form-control flex-1" placeholder="e.g., English"><select id="language-level" class="form-control w-32"><option value="A1">A1 (Beginner)</option><option value="A2">A2 (Elementary)</option><option value="B1">B1 (Intermediate)</option><option value="B2">B2 (Upper Intermediate)</option><option value="C1">C1 (Advanced)</option><option value="C2">C2 (Proficient)</option></select><button type="button" id="add-language" class="btn-secondary">Add</button></div></div>
+                            <div class="mt-4 flex justify-end"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Information</button></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 3: MY DOCUMENTS ================= -->
+            <div id="documents-pane" class="tab-pane">
+                <!-- Primary CV -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><h3><i class="fas fa-file-pdf mr-2"></i>Primary CV / Resume</h3></div>
+                    <div class="form-body">
+                        <div id="primary-cv-section">
+                            {% if user.resume %}
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><i class="fas fa-file-pdf text-red-500 mr-2"></i>{{ user.resume.name|cut:"resumes/" }}</div><div><a href="{{ user.resume.url }}" target="_blank" class="text-indigo-600 mr-3"><i class="fas fa-download"></i> Download</a><button id="delete-primary-cv" class="text-red-600"><i class="fas fa-trash"></i> Delete</button></div></div>
+                            {% else %}
+                                <p class="text-gray-500 mb-2">No CV uploaded.</p>
+                                <button id="upload-primary-cv-btn" class="btn-primary"><i class="fas fa-upload"></i> Upload CV</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alternative CVs -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><div class="flex justify-between items-center"><h3><i class="fas fa-copy mr-2"></i>Alternative CVs</h3><button id="add-alt-cv-btn" class="btn-secondary text-sm"><i class="fas fa-plus"></i> Upload Alternative CV</button></div></div>
+                    <div class="form-body"><div id="alt-cvs-list" class="space-y-2"></div></div>
+                </div>
+
+                <!-- Supporting Documents -->
+                <div class="edit-form-container mb-6">
+                    <div class="form-header"><div class="flex justify-between items-center"><h3><i class="fas fa-paperclip mr-2"></i>Supporting Documents (Certificates, References)</h3><button id="add-supporting-doc-btn" class="btn-secondary text-sm"><i class="fas fa-plus"></i> Upload Document</button></div></div>
+                    <div class="form-body"><div id="supporting-docs-list" class="space-y-2"></div></div>
+                </div>
+            </div>
+
+            <!-- Account Security Card (stays outside tabs) -->
+            <div class="edit-form-container mt-6">
+                <div class="form-header"><h3><i class="fas fa-shield-alt mr-2"></i>Account Security</h3></div>
+                <div class="form-body"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><a href="{% url 'account_change_password' %}" class="btn-secondary text-center"><i class="fas fa-key mr-2"></i>Change Password</a><a href="{% url 'account_email' %}" class="btn-secondary text-center"><i class="fas fa-envelope mr-2"></i>Email Settings</a></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+<!-- Resume upload modal (reused) -->
+<div id="resume-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"><h3 class="text-lg font-semibold mb-4">Upload Resume</h3><form id="resume-upload-form" enctype="multipart/form-data">{% csrf_token %}<input type="file" name="resume" id="modal-resume" accept=".pdf,.doc,.docx" class="w-full p-2 border rounded"><div class="flex gap-3 mt-4"><button type="submit" class="btn-primary">Upload</button><button type="button" id="close-modal" class="btn-secondary">Cancel</button></div></form></div></div>
+
+<!-- Education Modal -->
+<div id="education-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"><h3 id="education-modal-title" class="text-lg font-semibold mb-4">Add Education</h3><form id="education-form">{% csrf_token %}<input type="hidden" id="education-id"><div class="space-y-3"><div><label class="block text-sm font-medium mb-1">Institution *</label><input type="text" id="edu-institution" class="w-full p-2 border rounded" required></div><div><label class="block text-sm font-medium mb-1">Degree *</label><input type="text" id="edu-degree" class="w-full p-2 border rounded" required></div><div><label class="block text-sm font-medium mb-1">Field of Study</label><input type="text" id="edu-field" class="w-full p-2 border rounded"></div><div><label class="block text-sm font-medium mb-1">Start Date *</label><input type="date" id="edu-start-date" class="w-full p-2 border rounded" required></div><div><label class="flex items-center gap-2"><input type="checkbox" id="edu-current" class="rounded"><span class="text-sm">Currently studying</span></label></div><div id="edu-end-date-container"><label class="block text-sm font-medium mb-1">End Date</label><input type="date" id="edu-end-date" class="w-full p-2 border rounded"></div><div><label class="block text-sm font-medium mb-1">Description</label><textarea id="edu-description" rows="3" class="w-full p-2 border rounded"></textarea></div></div><div class="flex gap-3 mt-4"><button type="submit" class="btn-primary">Save</button><button type="button" id="close-education-modal" class="btn-secondary">Cancel</button></div></form></div></div>
+
+<!-- Work Modal -->
+<div id="work-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"><h3 id="work-modal-title" class="text-lg font-semibold mb-4">Add Work Experience</h3><form id="work-form">{% csrf_token %}<input type="hidden" id="work-id"><div class="space-y-3"><div><label class="block text-sm font-medium mb-1">Job Title *</label><input type="text" id="work-title" class="w-full p-2 border rounded" required></div><div><label class="block text-sm font-medium mb-1">Company *</label><input type="text" id="work-company" class="w-full p-2 border rounded" required></div><div><label class="block text-sm font-medium mb-1">Location</label><input type="text" id="work-location" class="w-full p-2 border rounded"></div><div><label class="block text-sm font-medium mb-1">Start Date *</label><input type="date" id="work-start-date" class="w-full p-2 border rounded" required></div><div><label class="flex items-center gap-2"><input type="checkbox" id="work-current" class="rounded"><span class="text-sm">Currently working</span></label></div><div id="work-end-date-container"><label class="block text-sm font-medium mb-1">End Date</label><input type="date" id="work-end-date" class="w-full p-2 border rounded"></div><div><label class="block text-sm font-medium mb-1">Description</label><textarea id="work-description" rows="3" class="w-full p-2 border rounded"></textarea></div></div><div class="flex gap-3 mt-4"><button type="submit" class="btn-primary">Save</button><button type="button" id="close-work-modal" class="btn-secondary">Cancel</button></div></form></div></div>
+
+<!-- Skill Modal -->
+<div id="skill-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"><h3 class="text-lg font-semibold mb-4">Add Skill</h3><form id="skill-form">{% csrf_token %}<div class="space-y-3"><div><label class="block text-sm font-medium mb-1">Skill Name *</label><input type="text" id="skill-name" class="w-full p-2 border rounded" placeholder="e.g., Python" required></div><div><label class="block text-sm font-medium mb-1">Years of Experience</label><input type="number" id="skill-years" class="w-full p-2 border rounded" min="0" value="0"></div></div><div class="flex gap-3 mt-4"><button type="submit" class="btn-primary">Save</button><button type="button" id="close-skill-modal" class="btn-secondary">Cancel</button></div></form></div></div>
+
+<!-- Generic Document Upload Modal (for CVs and supporting docs) -->
+<div id="doc-upload-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"><h3 id="doc-upload-title" class="text-lg font-semibold mb-4">Upload Document</h3><form id="doc-upload-form" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" id="doc-type" value=""><input type="file" name="document" id="modal-document" accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.xls,.xlsx,.ods,.txt,.rtf" class="w-full p-2 border rounded"><div class="flex gap-3 mt-4"><button type="submit" class="btn-primary">Upload</button><button type="button" id="close-doc-modal" class="btn-secondary">Cancel</button></div></form></div></div>
+
+<script>
+// ---------- Helper ----------
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+// ---------- Tab Switching ----------
+const panes = { looking: document.getElementById('looking-pane'), bring: document.getElementById('bring-pane'), documents: document.getElementById('documents-pane') };
+function activateTab(tabId) {
+    Object.values(panes).forEach(p => p.style.display = 'none');
+    panes[tabId].style.display = 'block';
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        const isActive = btn.dataset.tab === tabId;
+        btn.classList.toggle('border-indigo-600', isActive);
+        btn.classList.toggle('text-indigo-600', isActive);
+        btn.classList.toggle('border-transparent', !isActive);
+        btn.classList.toggle('text-gray-500', !isActive);
+    });
+}
+document.querySelectorAll('.tab-button').forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+activateTab('bring');
+
+// ---------- Profile Picture (unchanged) ----------
+const pictureInput = document.getElementById('picture-upload');
+const profilePictureImg = document.getElementById('profile-picture-img');
+const deletePictureBtn = document.getElementById('delete-picture');
+const uploadProgress = document.getElementById('upload-progress');
+if (pictureInput) pictureInput.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData(); formData.append('profile_picture', file);
+    if (uploadProgress) uploadProgress.style.display = 'block';
+    try {
+        const resp = await fetch("{% url 'accounts:upload_profile_picture' %}", { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
+        const result = await resp.json();
+        if (result.success) { profilePictureImg.src = result.url + '?t=' + Date.now(); if (deletePictureBtn) deletePictureBtn.style.display = 'flex'; }
+        else alert('Upload failed');
+    } catch(e) { alert('Error'); } finally { if (uploadProgress) uploadProgress.style.display = 'none'; pictureInput.value = ''; }
+});
+if (deletePictureBtn) deletePictureBtn.addEventListener('click', async () => {
+    if (!confirm('Delete profile picture?')) return;
+    try {
+        const resp = await fetch("{% url 'accounts:delete_profile_picture' %}", { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } });
+        if (resp.ok) { profilePictureImg.src = "{% static 'images/default-avatar.png' %}?t=" + Date.now(); deletePictureBtn.style.display = 'none'; }
+        else alert('Delete failed');
+    } catch(e) { alert('Error'); }
+});
+
+// ---------- Resume Upload (Primary CV) ----------
+function openResumeModal() { document.getElementById('resume-modal').classList.remove('hidden'); document.getElementById('resume-modal').classList.add('flex'); }
+document.getElementById('upload-resume-btn')?.addEventListener('click', openResumeModal);
+document.getElementById('upload-primary-cv-btn')?.addEventListener('click', openResumeModal);
+document.getElementById('close-modal')?.addEventListener('click', () => { document.getElementById('resume-modal').classList.add('hidden'); });
+document.getElementById('resume-upload-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = document.getElementById('modal-resume').files[0];
+    if (!file) return alert('Select a file');
+    const formData = new FormData(); formData.append('resume', file);
+    try {
+        const resp = await fetch('/accounts/profile/upload-resume/', { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
+        const result = await resp.json();
+        if (result.success) location.reload();
+        else alert(result.error || 'Upload failed');
+    } catch(e) { alert('Error'); }
+});
+async function deletePrimaryCV() {
+    if (!confirm('Delete your primary CV?')) return;
+    try {
+        const resp = await fetch('/accounts/profile/delete-resume/', { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } });
+        if (resp.ok) location.reload();
+        else alert('Delete failed');
+    } catch(e) { alert('Error'); }
+}
+document.getElementById('delete-resume-btn')?.addEventListener('click', deletePrimaryCV);
+document.getElementById('delete-primary-cv')?.addEventListener('click', deletePrimaryCV);
+
+// ---------- Job Preferences (Tab 1) ----------
+let jobTitles = [], jobLocations = [];
+function renderJobTitles() {
+    const container = document.getElementById('job-titles-container');
+    container.innerHTML = jobTitles.map(title => `<span class="bg-gray-200 px-2 py-1 rounded-full text-sm flex items-center gap-1">${title} <button type="button" class="remove-job-title text-red-500" data-value="${title}">&times;</button></span>`).join('');
+    document.querySelectorAll('.remove-job-title').forEach(btn => btn.addEventListener('click', () => { jobTitles = jobTitles.filter(t => t !== btn.dataset.value); renderJobTitles(); }));
+}
+function renderJobLocations() {
+    const container = document.getElementById('job-locations-container');
+    container.innerHTML = jobLocations.map(loc => `<span class="bg-gray-200 px-2 py-1 rounded-full text-sm flex items-center gap-1">${loc} <button type="button" class="remove-job-location text-red-500" data-value="${loc}">&times;</button></span>`).join('');
+    document.querySelectorAll('.remove-job-location').forEach(btn => btn.addEventListener('click', () => { jobLocations = jobLocations.filter(l => l !== btn.dataset.value); renderJobLocations(); }));
+}
+document.getElementById('add-job-title')?.addEventListener('click', () => { const val = document.getElementById('job-title-input').value.trim(); if(val) { jobTitles.push(val); renderJobTitles(); document.getElementById('job-title-input').value = ''; } });
+document.getElementById('add-job-location')?.addEventListener('click', () => { const val = document.getElementById('job-location-input').value.trim(); if(val) { jobLocations.push(val); renderJobLocations(); document.getElementById('job-location-input').value = ''; } });
+async function loadJobPreferences() {
+    try {
+        const resp = await fetch('/accounts/profile/job-preferences/');
+        if (resp.ok) {
+            const data = await resp.json();
+            jobTitles = data.job_titles || [];
+            jobLocations = data.job_locations || [];
+            renderJobTitles(); renderJobLocations();
+            if (data.relocate) document.querySelector(`input[name="relocate"][value="${data.relocate}"]`).checked = true;
+            document.getElementById('desired-salary').value = data.desired_salary || '';
+            (data.work_time || []).forEach(v => { const cb = document.querySelector(`.work-time-checkbox[value="${v}"]`); if(cb) cb.checked = true; });
+            (data.contract_types || []).forEach(v => { const cb = document.querySelector(`.contract-checkbox[value="${v}"]`); if(cb) cb.checked = true; });
+            (data.remote_options || []).forEach(v => { const cb = document.querySelector(`.remote-checkbox[value="${v}"]`); if(cb) cb.checked = true; });
+        }
+    } catch(e) { console.warn(e); }
+}
+document.getElementById('job-preferences-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const workTime = Array.from(document.querySelectorAll('.work-time-checkbox:checked')).map(cb => cb.value);
+    const contractTypes = Array.from(document.querySelectorAll('.contract-checkbox:checked')).map(cb => cb.value);
+    const remoteOptions = Array.from(document.querySelectorAll('.remote-checkbox:checked')).map(cb => cb.value);
+    const relocate = document.querySelector('input[name="relocate"]:checked')?.value || '';
+    const payload = { job_titles: jobTitles, job_locations: jobLocations, relocate, desired_salary: document.getElementById('desired-salary').value, work_time: workTime, contract_types: contractTypes, remote_options: remoteOptions };
+    try {
+        const resp = await fetch('/accounts/profile/job-preferences/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify(payload) });
+        const result = await resp.json();
+        const feedback = document.getElementById('preferences-feedback');
+        if (result.success) { feedback.innerHTML = '<span class="text-green-600">Preferences saved!</span>'; setTimeout(()=>feedback.innerHTML='',3000); }
+        else feedback.innerHTML = '<span class="text-red-600">Error saving.</span>';
+    } catch(e) { alert('Error'); }
+});
+loadJobPreferences();
+
+// ---------- Additional Info (Current Salary, Notice, License, Languages) ----------
+let languages = []; // each {name, level}
+function renderLanguages() {
+    const container = document.getElementById('languages-container');
+    container.innerHTML = languages.map(lang => `<span class="bg-gray-200 px-2 py-1 rounded-full text-sm flex items-center gap-1">${lang.name} (${lang.level}) <button type="button" class="remove-lang text-red-500" data-name="${lang.name}">&times;</button></span>`).join('');
+    document.querySelectorAll('.remove-lang').forEach(btn => btn.addEventListener('click', () => { languages = languages.filter(l => l.name !== btn.dataset.name); renderLanguages(); }));
+}
+document.getElementById('add-language')?.addEventListener('click', () => {
+    const name = document.getElementById('language-name').value.trim();
+    const level = document.getElementById('language-level').value;
+    if (name && level) { languages.push({name, level}); renderLanguages(); document.getElementById('language-name').value = ''; }
+});
+async function loadAdditionalInfo() {
+    try {
+        const resp = await fetch('/accounts/profile/additional-info/');
+        if (resp.ok) {
+            const data = await resp.json();
+            document.getElementById('current-salary').value = data.current_salary || '';
+            document.getElementById('notice-period').value = data.notice_period || '';
+            document.getElementById('drivers-license').value = data.drivers_license || '';
+            languages = data.languages || [];
+            renderLanguages();
+        }
+    } catch(e) {}
+}
+document.getElementById('additional-info-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = { current_salary: document.getElementById('current-salary').value, notice_period: document.getElementById('notice-period').value, drivers_license: document.getElementById('drivers-license').value, languages };
+    try {
+        const resp = await fetch('/accounts/profile/additional-info/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify(payload) });
+        if (resp.ok) alert('Saved!');
+        else alert('Error');
+    } catch(e) { alert('Error'); }
+});
+loadAdditionalInfo();
+
+// ---------- Documents: Alternative CVs & Supporting Docs ----------
+function loadDocuments() {
+    fetch('/accounts/profile/documents/').then(r=>r.json()).then(data => {
+        const altCvContainer = document.getElementById('alt-cvs-list');
+        const supportContainer = document.getElementById('supporting-docs-list');
+        altCvContainer.innerHTML = data.alternative_cvs.map(doc => `<div class="flex justify-between items-center p-2 bg-gray-50 rounded"><span><i class="fas fa-file-alt mr-2"></i>${doc.name}</span><div><a href="${doc.url}" target="_blank" class="text-indigo-600 mr-3">View</a><button class="delete-doc text-red-600" data-id="${doc.id}" data-type="alt_cv">Delete</button></div></div>`).join('');
+        supportContainer.innerHTML = data.supporting_docs.map(doc => `<div class="flex justify-between items-center p-2 bg-gray-50 rounded"><span><i class="fas fa-file-alt mr-2"></i>${doc.name}</span><div><a href="${doc.url}" target="_blank" class="text-indigo-600 mr-3">View</a><button class="delete-doc text-red-600" data-id="${doc.id}" data-type="supporting">Delete</button></div></div>`).join('');
+        document.querySelectorAll('.delete-doc').forEach(btn => btn.addEventListener('click', async (e) => {
+            if(!confirm('Delete document?')) return;
+            const id = btn.dataset.id, type = btn.dataset.type;
+            await fetch(`/accounts/profile/documents/delete/${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } });
+            loadDocuments();
+        }));
+    }).catch(()=>{});
+}
+let currentDocType = '';
+function openDocUploadModal(type) { currentDocType = type; document.getElementById('doc-upload-title').innerText = type === 'alt_cv' ? 'Upload Alternative CV' : 'Upload Supporting Document'; document.getElementById('doc-type').value = type; document.getElementById('doc-upload-modal').classList.remove('hidden'); document.getElementById('doc-upload-modal').classList.add('flex'); }
+document.getElementById('add-alt-cv-btn')?.addEventListener('click', () => openDocUploadModal('alt_cv'));
+document.getElementById('add-supporting-doc-btn')?.addEventListener('click', () => openDocUploadModal('supporting'));
+document.getElementById('close-doc-modal')?.addEventListener('click', () => document.getElementById('doc-upload-modal').classList.add('hidden'));
+document.getElementById('doc-upload-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = document.getElementById('modal-document').files[0];
+    if (!file) return alert('Select a file');
+    const formData = new FormData(); formData.append('document', file); formData.append('doc_type', currentDocType);
+    try {
+        const resp = await fetch('/accounts/profile/documents/upload/', { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
+        if (resp.ok) { location.reload(); } else alert('Upload failed');
+    } catch(e) { alert('Error'); }
+});
+loadDocuments();
+
+// ---------- Education, Work, Skills CRUD (existing, moved to tab 2) ----------
+// (All original event handlers for education, work, skills remain functional)
+const educationModal = document.getElementById('education-modal'), workModal = document.getElementById('work-modal'), skillModal = document.getElementById('skill-modal');
+function showEducationModal(eduId=null) { /* same as original */ educationModal.classList.remove('hidden'); educationModal.classList.add('flex'); if(eduId){ fetch(`/accounts/profile/education/edit/${eduId}/`).then(r=>r.json()).then(d=>{ document.getElementById('education-id').value=d.id; document.getElementById('edu-institution').value=d.institution; document.getElementById('edu-degree').value=d.degree; document.getElementById('edu-field').value=d.field_of_study; document.getElementById('edu-start-date').value=d.start_date; document.getElementById('edu-current').checked=d.current; document.getElementById('edu-end-date-container').style.display=d.current?'none':'block'; document.getElementById('edu-end-date').value=d.end_date||''; document.getElementById('edu-description').value=d.description||''; }); } else { document.getElementById('education-form').reset(); document.getElementById('education-id').value=''; } }
+function showWorkModal(workId=null) { workModal.classList.remove('hidden'); workModal.classList.add('flex'); if(workId){ fetch(`/accounts/profile/work/edit/${workId}/`).then(r=>r.json()).then(d=>{ document.getElementById('work-id').value=d.id; document.getElementById('work-title').value=d.job_title; document.getElementById('work-company').value=d.company; document.getElementById('work-location').value=d.location||''; document.getElementById('work-start-date').value=d.start_date; document.getElementById('work-current').checked=d.current; document.getElementById('work-end-date-container').style.display=d.current?'none':'block'; document.getElementById('work-end-date').value=d.end_date||''; document.getElementById('work-description').value=d.description||''; }); } else { document.getElementById('work-form').reset(); document.getElementById('work-id').value=''; } }
+document.getElementById('add-education-btn')?.addEventListener('click',()=>showEducationModal());
+document.getElementById('close-education-modal')?.addEventListener('click',()=>educationModal.classList.add('hidden'));
+document.getElementById('education-form')?.addEventListener('submit', async(e)=>{ e.preventDefault(); const id=document.getElementById('education-id').value; const url=id?`/accounts/profile/education/edit/${id}/`:'/accounts/profile/education/add/'; const data={institution:document.getElementById('edu-institution').value,degree:document.getElementById('edu-degree').value,field_of_study:document.getElementById('edu-field').value,start_date:document.getElementById('edu-start-date').value,end_date:document.getElementById('edu-end-date').value,current:document.getElementById('edu-current').checked,description:document.getElementById('edu-description').value}; const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify(data)}); if(resp.ok) location.reload(); });
+document.getElementById('add-work-btn')?.addEventListener('click',()=>showWorkModal());
+document.getElementById('close-work-modal')?.addEventListener('click',()=>workModal.classList.add('hidden'));
+document.getElementById('work-form')?.addEventListener('submit', async(e)=>{ e.preventDefault(); const id=document.getElementById('work-id').value; const url=id?`/accounts/profile/work/edit/${id}/`:'/accounts/profile/work/add/'; const data={job_title:document.getElementById('work-title').value,company:document.getElementById('work-company').value,location:document.getElementById('work-location').value,start_date:document.getElementById('work-start-date').value,end_date:document.getElementById('work-end-date').value,current:document.getElementById('work-current').checked,description:document.getElementById('work-description').value}; const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify(data)}); if(resp.ok) location.reload(); });
+document.getElementById('add-skill-btn')?.addEventListener('click',()=>{ skillModal.classList.remove('hidden'); skillModal.classList.add('flex'); document.getElementById('skill-form').reset(); });
+document.getElementById('close-skill-modal')?.addEventListener('click',()=>skillModal.classList.add('hidden'));
+document.getElementById('skill-form')?.addEventListener('submit', async(e)=>{ e.preventDefault(); const data={name:document.getElementById('skill-name').value,years_of_experience:parseInt(document.getElementById('skill-years').value)||0}; const resp=await fetch('/accounts/profile/skill/add/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify(data)}); if(resp.ok) location.reload(); });
+// Delete handlers (delegation)
+document.querySelectorAll('.delete-education-btn').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm('Delete?')){ const id=btn.dataset.id; await fetch(`/accounts/profile/education/delete/${id}/`,{method:'DELETE',headers:{'X-CSRFToken':csrfToken}}); location.reload(); } }));
+document.querySelectorAll('.edit-education-btn').forEach(btn=>btn.addEventListener('click',()=>showEducationModal(btn.dataset.id)));
+document.querySelectorAll('.delete-work-btn').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm('Delete?')){ const id=btn.dataset.id; await fetch(`/accounts/profile/work/delete/${id}/`,{method:'DELETE',headers:{'X-CSRFToken':csrfToken}}); location.reload(); } }));
+document.querySelectorAll('.edit-work-btn').forEach(btn=>btn.addEventListener('click',()=>showWorkModal(btn.dataset.id)));
+document.querySelectorAll('.delete-skill-btn').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm('Delete?')){ const div=btn.closest('.skill-tag'); const id=div.dataset.id; await fetch(`/accounts/profile/skill/delete/${id}/`,{method:'DELETE',headers:{'X-CSRFToken':csrfToken}}); location.reload(); } }));
+// Checkbox toggles for current dates
+document.getElementById('edu-current')?.addEventListener('change',function(){ document.getElementById('edu-end-date-container').style.display=this.checked?'none':'block'; });
+document.getElementById('work-current')?.addEventListener('change',function(){ document.getElementById('work-end-date-container').style.display=this.checked?'none':'block'; });
+</script>
+<style>
+    .tab-pane { display: none; }
+    #bring-pane { display: block; }
+    .tab-button { transition: all 0.2s; cursor: pointer; }
+</style>
+{% endblock %}

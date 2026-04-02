@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+{% load static %}
+{% load socialaccount %}
+<html lang="en">
+<head>
+    {% providers_media_js %}
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Recruitment Platform{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'icons/favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'icons/site.webmanifest' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="font-sans antialiased bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+
+    <!-- Google One Tap -->
+    {% if not user.is_authenticated %}
+    <div id="g_id_onload"
+         data-client_id="{{ GOOGLE_CLIENT_ID }}"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="true">
+    </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <a href="/" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <i class="fas fa-briefcase mr-2"></i>Zizo Jobs
+                </a>
+
+                <!-- Desktop Links -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{% url 'job_list' %}" class="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium">Find Jobs</a>
+                    <a href="{% url 'companies' %}" class="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium">Companies</a>
+                    {% if user.is_authenticated %}
+                        {% if user.user_type == 'recruiter' %}
+                            <a href="{% url 'post_job' %}" class="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium">Post a Job</a>
+                            <a href="{% url 'dashboard' %}" class="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium">Dashboard</a>
+                        {% else %}
+                            <a href="{% url 'my_applications' %}" class="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium">My Applications</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Dark Mode Toggle + Auth -->
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button id="dark-mode-toggle" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                        🌙
+                    </button>
+
+                    {% if user.is_authenticated %}
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
+                                <!-- Profile Picture -->
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" 
+                                         alt="{{ user.username }}" 
+                                         class="w-8 h-8 rounded-full object-cover object-center border-2 border-indigo-600">
+                                {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                                        {{ user.first_name|make_list|first|default:user.username|make_list|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <span>{{ user.first_name|default:user.username }}</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border dark:border-gray-700 z-10">
+                                <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700">My Profile</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700">My account settings</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700">Notifications</a>
+                                <form method="post" action="{% url 'account_logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700">Logout</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'account_login' %}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-medium transition">Log in</a>
+                        <a href="{% url 'account_signup' %}" class="bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition shadow-sm">Sign up</a>
+                    {% endif %}
+
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-button" class="md:hidden text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-2 px-4">
+            {% if user.is_authenticated %}
+                <div class="flex items-center space-x-3 py-3 mb-2 border-b border-gray-200 dark:border-gray-700">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" 
+                             alt="{{ user.username }}" 
+                             class="w-10 h-10 rounded-full object-cover border-2 border-indigo-600">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                            {{ user.first_name|make_list|first|default:user.username|make_list|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="font-medium text-gray-900 dark:text-white">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</div>
+                    </div>
+                </div>
+            {% endif %}
+            <a href="{% url 'job_list' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Find Jobs</a>
+            <a href="{% url 'companies' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Companies</a>
+            {% if user.is_authenticated %}
+                {% if user.user_type == 'recruiter' %}
+                    <a href="{% url 'post_job' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Post a Job</a>
+                    <a href="{% url 'dashboard' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'my_applications' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">My Applications</a>
+                {% endif %}
+                <a href="{% url 'accounts:profile' %}" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">My Profile</a>
+                <a href="#" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">My account settings</a>
+                <a href="#" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Notifications</a>
+                <a href="#" class="block py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">Change Password</a>
+                <form method="post" action="{% url 'account_logout' %}" class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit" class="block w-full text-left py-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">Logout</button>
+                </form>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Zizo Jobs</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Connecting talented job seekers with top recruiters.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">For Job Seekers</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Browse Jobs</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Career Advice</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Upload Resume</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">For Recruiters</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Post a Job</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Search Candidates</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">Pricing</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                &copy; {% now "Y" %} Zizo Jobs. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <script src="//unpkg.com/alpinejs" defer></script>
+
+    <!-- Dark Mode Toggle -->
+    <script>
+        const toggle = document.getElementById('dark-mode-toggle');
+        const html = document.documentElement;
+
+        if (localStorage.getItem('theme') === 'dark') {
+            html.classList.add('dark');
+            toggle.textContent = '☀️';
+        }
+
+        toggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            if (html.classList.contains('dark')) {
+                toggle.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                toggle.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+
+    <!-- Google One Tap callback -->
+    {% if not user.is_authenticated %}
+    <script>
+        function handleCredentialResponse(response) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "google_login_by_token" %}';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'credential';
+            tokenInput.value = response.credential;
+
+            form.appendChild(csrfInput);
+            form.appendChild(tokenInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+    {% endif %}
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
